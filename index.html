@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en" data-theme="auto" data-scheme="dark" data-contrast="normal">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AdHoc TaskManager</title>
+  <meta name="description" content="Quick-capture inbox for ad-hoc, unbudgeted assignments (Task 28). Works 100% offline.">
+  <meta name="theme-color" content="#0f172a" id="meta-theme">
+  <meta name="color-scheme" content="dark light">
+
+  <!-- iOS / Android standalone behaviour -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AdHoc Tasks">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="application-name" content="AdHoc Tasks">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+
+  <link rel="stylesheet" href="css/styles.css">
+
+  <script>
+    /* Pre-paint theme: avoids a flash of the wrong theme. */
+    (function () {
+      try {
+        var t = localStorage.getItem('adhoc.theme') || 'auto';
+        var c = localStorage.getItem('adhoc.contrast') === '1';
+        var dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var scheme = t === 'auto' ? (dark ? 'dark' : 'light') : t;
+        var r = document.documentElement;
+        r.dataset.theme = t; r.dataset.scheme = scheme;
+        r.dataset.contrast = (c || window.matchMedia('(prefers-contrast: more)').matches) ? 'high' : 'normal';
+        var m = document.getElementById('meta-theme');
+        if (m) m.content = c ? (scheme === 'dark' ? '#000000' : '#ffffff') : (scheme === 'dark' ? '#0f172a' : '#f1f5f9');
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <!-- Inline UI icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 11l4.5 4.5 4.5-4.5M5 20h14"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8L12 3.5 16.5 8M5 20h14"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/></symbol>
+      <symbol id="i-report" viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+      <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13l2.5-8h11L20 13v6H4z"/><path d="M4 13h5a3 3 0 0 0 6 0h5"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M4 8v5h5"/><path d="M5.5 13a8 8 0 1 0 2-6"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4l9 16H3zM12 10v4.5M12 17.5v.01"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+      <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L5 13.5h6L10 22l8-11.5h-6z" fill="currentColor"/></symbol>
+      <symbol id="i-install" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M12 8v6M9.5 11.5L12 14l2.5-2.5M10 18h4"/></symbol>
+    </defs>
+  </svg>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><svg class="i"><use href="#i-bolt"/></svg></span>
+      <div class="brand-text">
+        <h1>AdHoc TaskManager</h1>
+        <p class="tagline">Task 28 · Quick-capture inbox</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span id="net-status" class="net-pill" role="status" data-online="true">Online</span>
+      <button id="btn-install" class="btn btn-ghost btn-sm" type="button" hidden>
+        <svg class="i" aria-hidden="true"><use href="#i-install"/></svg><span class="hide-xs">Install</span>
+      </button>
+      <button id="btn-report" class="icon-btn" type="button" aria-label="Manager report"><svg class="i" aria-hidden="true"><use href="#i-report"/></svg></button>
+      <button id="btn-settings" class="icon-btn" type="button" aria-label="Settings and data"><svg class="i" aria-hidden="true"><use href="#i-settings"/></svg></button>
+    </div>
+  </header>
+
+  <nav class="tabbar" aria-label="Task views">
+    <button type="button" class="tab" data-view="inbox" aria-current="page">
+      <svg class="i" aria-hidden="true"><use href="#i-inbox"/></svg><span>Inbox</span><span class="tab-count" id="count-inbox">0</span>
+    </button>
+    <button type="button" class="tab" data-view="progress">
+      <svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span>In Progress</span><span class="tab-count" id="count-progress">0</span>
+    </button>
+    <button type="button" class="tab" data-view="done">
+      <svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span>Closed</span><span class="tab-count" id="count-done">0</span>
+    </button>
+  </nav>
+
+  <main id="main" tabindex="-1">
+    <section class="stats" aria-label="This week at a glance">
+      <div class="stat"><span class="stat-num" id="stat-open">0</span><span class="stat-label">Open in inbox</span></div>
+      <div class="stat"><span class="stat-num" id="stat-active">0</span><span class="stat-label">In progress</span></div>
+      <div class="stat"><span class="stat-num" id="stat-hours">0.00</span><span class="stat-label">Hours diverted · week</span></div>
+      <div class="stat"><span class="stat-num" id="stat-scope">0</span><span class="stat-label">Change-order flags · week</span></div>
+    </section>
+
+    <section class="toolbar" aria-label="Search and filters">
+      <div class="search">
+        <svg class="i" aria-hidden="true"><use href="#i-search"/></svg>
+        <label class="sr-only" for="q">Search tasks</label>
+        <input id="q" type="search" placeholder="Search tasks, people, notes…" autocomplete="off" enterkeyhint="search">
+      </div>
+      <div class="filters">
+        <label class="select-wrap" id="grp-wrap">
+          <span class="sr-only">Group inbox by</span>
+          <select id="f-group">
+            <option value="urgency">Group: Urgency</option>
+            <option value="requester">Group: Requester</option>
+          </select>
+        </label>
+        <label class="select-wrap">
+          <span class="sr-only">Filter by context</span>
+          <select id="f-context-filter"></select>
+        </label>
+        <label class="chip chip-filter">
+          <input type="checkbox" id="f-scope-only"><span>Change-order only</span>
+        </label>
+      </div>
+    </section>
+
+    <h2 id="view-title" class="view-title">Inbox</h2>
+    <p id="sr-status" class="sr-only" role="status" aria-live="polite"></p>
+    <div id="list" class="list" aria-busy="true"></div>
+  </main>
+
+  <button id="fab" class="fab" type="button" aria-label="Quick add task (shortcut: N)">
+    <svg class="i" aria-hidden="true"><use href="#i-plus"/></svg><span>Quick add</span>
+  </button>
+
+  <!-- ========== Capture sheet ========== -->
+  <dialog id="dlg-capture" class="sheet" aria-labelledby="capture-heading">
+    <form id="capture-form" class="sheet-form" novalidate autocomplete="off">
+      <header class="sheet-head">
+        <h2 id="capture-heading">Quick capture</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+
+      <div class="sheet-scroll">
+        <div class="field">
+          <label for="f-title">What was assigned?</label>
+          <input id="f-title" name="title" type="text" maxlength="200" autofocus enterkeyhint="next" autocapitalize="sentences" placeholder="e.g. Re-map tank 3 level tag on HMI">
+        </div>
+
+        <fieldset class="field">
+          <legend>Assigned by</legend>
+          <div id="chips-requester" class="chips"></div>
+          <div id="requester-new-wrap" class="inline-add" hidden>
+            <label class="sr-only" for="f-requester-new">New requester name or role</label>
+            <input id="f-requester-new" type="text" maxlength="80" placeholder="Name or role" enterkeyhint="done">
+            <button type="button" id="btn-add-requester" class="btn btn-primary">Add</button>
+          </div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Context · which core duty does it touch?</legend>
+          <div id="chips-context" class="chips"></div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Urgency</legend>
+          <div id="chips-urgency" class="urgency-opts"></div>
+        </fieldset>
+
+        <label class="check-row">
+          <input type="checkbox" id="f-scope" name="scope">
+          <span><strong>Billable scope creep / needs change order</strong><small>Flags this task in the manager report</small></span>
+        </label>
+
+        <div class="field">
+          <label for="f-note">Raw note · hurried verbal orders</label>
+          <textarea id="f-note" name="note" rows="3" maxlength="4000" placeholder="Type, dictate, or record what was said…"></textarea>
+          <div class="note-tools">
+            <button type="button" id="btn-dictate" class="btn btn-ghost btn-sm" aria-pressed="false" hidden><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg><span>Dictate</span></button>
+            <button type="button" id="btn-record" class="btn btn-ghost btn-sm" aria-pressed="false" hidden><svg class="i" aria-hidden="true"><use href="#i-mic"/></svg><span>Record audio</span></button>
+            <span id="rec-status" class="rec-status" role="status"></span>
+          </div>
+          <div id="audio-wrap" class="audio-wrap" hidden>
+            <audio id="f-audio" controls preload="metadata"></audio>
+            <button type="button" id="btn-audio-clear" class="icon-btn" aria-label="Remove audio note"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <footer class="sheet-foot">
+        <p id="capture-error" class="form-error" role="alert" hidden></p>
+        <div class="foot-actions">
+          <button type="submit" id="btn-save" class="btn btn-secondary" value="save">Save to Inbox</button>
+          <button type="submit" id="btn-save-start" class="btn btn-primary" value="start"><svg class="i" aria-hidden="true"><use href="#i-play"/></svg>Save &amp; Start</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ========== Task detail ========== -->
+  <dialog id="dlg-task" class="sheet" aria-labelledby="detail-heading">
+    <div class="sheet-form">
+      <header class="sheet-head">
+        <h2 id="detail-heading">Task details</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="sheet-scroll" id="task-detail"></div>
+      <footer class="sheet-foot"><div class="foot-actions wrap" id="task-actions"></div></footer>
+    </div>
+  </dialog>
+
+  <!-- ========== Complete task ========== -->
+  <dialog id="dlg-complete" class="sheet" aria-labelledby="complete-heading">
+    <form id="complete-form" class="sheet-form" novalidate>
+      <header class="sheet-head">
+        <h2 id="complete-heading">Close task</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Cancel"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="sheet-scroll">
+        <p id="c-summary" class="muted"></p>
+        <div class="field">
+          <label for="c-resolution">Closure note / resolution</label>
+          <textarea id="c-resolution" rows="4" maxlength="2000" placeholder="What was done? e.g. Rebuilt alarm tag mapping, verified on site."></textarea>
+        </div>
+        <div class="field">
+          <label for="c-adjust">Adjust logged time (minutes, optional)</label>
+          <input id="c-adjust" type="number" inputmode="numeric" step="5" min="-1440" max="1440" value="0">
+          <small class="muted">Forgot to start the timer? Add minutes. Use a negative number to remove time.</small>
+        </div>
+      </div>
+      <footer class="sheet-foot">
+        <div class="foot-actions">
+          <button type="button" class="btn btn-ghost" data-close>Cancel</button>
+          <button type="submit" class="btn btn-primary"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Close task</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ========== Manager report ========== -->
+  <dialog id="dlg-report" class="sheet sheet-wide" aria-labelledby="report-heading">
+    <div class="sheet-form">
+      <header class="sheet-head">
+        <h2 id="report-heading">Task 28 manager report</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="sheet-scroll">
+        <div class="row-2">
+          <div class="field">
+            <label for="r-range">Period</label>
+            <select id="r-range">
+              <option value="today">Today</option>
+              <option value="week">This week</option>
+              <option value="month">This month</option>
+              <option value="all">All time</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="r-engineer">Engineer name on report</label>
+            <input id="r-engineer" type="text" maxlength="80" placeholder="Your name">
+          </div>
+        </div>
+        <div class="field">
+          <label for="r-text">Executive summary · paste into WhatsApp / Email / ClickUp</label>
+          <textarea id="r-text" class="report-text" rows="14" readonly></textarea>
+        </div>
+      </div>
+      <footer class="sheet-foot">
+        <div class="foot-actions wrap">
+          <button type="button" id="btn-copy-summary" class="btn btn-primary"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>Copy summary</button>
+          <button type="button" id="btn-share" class="btn btn-secondary" hidden><svg class="i" aria-hidden="true"><use href="#i-share"/></svg>Share</button>
+          <button type="button" id="btn-csv" class="btn btn-secondary"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Download CSV</button>
+          <button type="button" id="btn-copy-csv" class="btn btn-ghost"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg>Copy CSV</button>
+        </div>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- ========== Settings & data ========== -->
+  <dialog id="dlg-settings" class="sheet" aria-labelledby="settings-heading">
+    <div class="sheet-form">
+      <header class="sheet-head">
+        <h2 id="settings-heading">Settings &amp; data</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="sheet-scroll">
+        <div class="field">
+          <label for="s-engineer">Engineer name (used on reports)</label>
+          <input id="s-engineer" type="text" maxlength="80" autocomplete="name">
+        </div>
+        <div class="row-2">
+          <div class="field">
+            <label for="s-theme">Theme</label>
+            <select id="s-theme">
+              <option value="auto">Match device</option>
+              <option value="dark">Dark (control room)</option>
+              <option value="light">Light (outdoor / sunlight)</option>
+            </select>
+          </div>
+          <label class="check-row compact">
+            <input type="checkbox" id="s-contrast"><span><strong>High contrast</strong></span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="s-requesters">Requesters list (one per line)</label>
+          <textarea id="s-requesters" rows="5" maxlength="1500"></textarea>
+        </div>
+
+        <h3 class="sub-title">Backup &amp; restore</h3>
+        <p class="muted">All data lives only on this device. Export a JSON backup regularly. (Audio notes are not included in the JSON file.)</p>
+        <div class="foot-actions wrap left">
+          <button type="button" id="btn-export-json" class="btn btn-secondary"><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Export backup</button>
+          <label class="btn btn-secondary file-btn">
+            <svg class="i" aria-hidden="true"><use href="#i-upload"/></svg>Import backup
+            <input type="file" id="s-import" accept="application/json,.json">
+          </label>
+          <button type="button" id="btn-clear-all" class="btn btn-danger"><svg class="i" aria-hidden="true"><use href="#i-trash"/></svg>Erase all data</button>
+        </div>
+
+        <h3 class="sub-title">About</h3>
+        <p id="s-info" class="muted"></p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ========== iOS install help ========== -->
+  <dialog id="dlg-ios" class="sheet" aria-labelledby="ios-heading">
+    <div class="sheet-form">
+      <header class="sheet-head">
+        <h2 id="ios-heading">Install on iPhone / iPad</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Close"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="sheet-scroll">
+        <ol class="steps">
+          <li>Open this page in <strong>Safari</strong>.</li>
+          <li>Tap the <strong>Share</strong> button.</li>
+          <li>Choose <strong>Add to Home Screen</strong>, then tap <strong>Add</strong>.</li>
+        </ol>
+        <p class="muted">It then opens full-screen and works offline.</p>
+      </div>
+      <footer class="sheet-foot"><div class="foot-actions"><button type="button" class="btn btn-primary" data-close>Got it</button></div></footer>
+    </div>
+  </dialog>
+
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+  <noscript><p class="noscript">AdHoc TaskManager needs JavaScript enabled.</p></noscript>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
